@@ -1,0 +1,11 @@
+# Don't push secrets
+.env
+
+# OS / Editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
