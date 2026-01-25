@@ -1,7 +1,3 @@
-Below is a **copy-paste README.md section** documenting everything we’ve done so far (Stage 1). It’s written so a non-technical reader can still follow the story, while technical teammates can reproduce the setup.
-
----
-
 # Portfolio 01: Security Monitoring — Graylog SIEM (Docker Lab)
 
 This repository contains our **Security Monitoring prototype** for the Cyber Security Automation module.
