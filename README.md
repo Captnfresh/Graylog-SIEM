@@ -1,6 +1,142 @@
 # Documentation: Log Ingestion, Parsing, and Export (Graylog)
 
-## Overview (Non-Technical Summary)
+---
+
+# Getting Started (Environment Setup)
+
+This section allows any team member to spin up the lab and get identical parsing results.
+
+---
+
+## 1️. Clone Repository
+
+```bash
+git clone <repo-url>
+cd graylog-lab
+git checkout feature/phase2-graylog-parsing
+copy .env.example .env
+```
+
+---
+
+## 2️. Configure `.env`
+
+Open `.env` in VS Code and set:
+
+```env
+THIS HAS BEEN PROVIDED TO ALL TEAM MEMBERS
+```
+
+### Meaning
+
+| Variable           | Purpose                       |
+| ------------------ | ----------------------------- |
+| PASSWORD_SECRET    | Internal Graylog security key |
+| ROOT_PASSWORD_SHA2 | Admin password hash           |
+| HTTP_EXTERNAL_URI  | Graylog web address           |
+| OPENSEARCH_HOSTS   | Log database backend          |
+
+---
+
+## 3️. Start Environment
+
+```bash
+docker compose up -d
+```
+
+Wait 1–2 minutes for containers to fully start.
+
+---
+
+## 4️. Access Graylog UI
+
+Open:
+
+```
+http://localhost:9000
+```
+
+Login:
+
+```
+User: admin  
+Pass: Admin@12345
+```
+
+---
+
+## 5️. Run Bootstrap (Auto-Configuration)
+
+Bootstrap automatically recreates:
+
+- Inputs
+- Extractors
+- Parsing rules
+
+```powershell
+.\bootstrap.ps1
+```
+
+This removes manual UI setup and ensures reproducibility.
+
+---
+
+## 6️. Send Test Log
+
+Run in PowerShell:
+
+```powershell
+$server = "127.0.0.1"
+$port   = 1514
+$msg    = "<134>Feb 03 15:00:00 windows-host sshd[123]: BOOTSTRAP_TEST Failed password for invalid user test from 10.10.10.10 port 5555 ssh2"
+
+$client = New-Object System.Net.Sockets.TcpClient
+$client.Connect($server, $port)
+
+$stream = $client.GetStream()
+$writer = New-Object System.IO.StreamWriter($stream)
+$writer.AutoFlush = $true
+$writer.WriteLine($msg)
+
+$writer.Dispose()
+$stream.Dispose()
+$client.Close()
+```
+
+---
+
+## 7️. Verify Parsing
+
+In Graylog:
+
+* Go to **Search**
+* Time Range → Last 15 minutes
+* Search:
+
+```
+BOOTSTRAP_TEST
+```
+
+You should see fields:
+
+✅ `source_ip`
+✅ `username`
+✅ `action`
+✅ `event_type`
+
+If visible → parsing is working.
+
+---
+
+
+
+
+
+
+
+
+
+# Overview (Non-Technical Summary)
 
 This project uses **Graylog** to centralise logs for security monitoring. We set up multiple “log doors” (called **inputs**) so logs can enter Graylog. We then “organised” those logs using **extractors** so Graylog can identify important details like:
 
