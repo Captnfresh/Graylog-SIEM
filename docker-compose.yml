@@ -27,9 +27,9 @@ services:
       - "9200:9200"
     restart: unless-stopped
 
-  graylog:
+  greylog:
     image: graylog/graylog:6.1
-    container_name: graylog
+    container_name: greylog
     depends_on:
       - mongodb
       - opensearch
@@ -46,6 +46,30 @@ services:
       - "1514:1514/udp"
       - "12201:12201"
       - "12201:12201/udp"
+    restart: unless-stopped
+
+  log-automation:
+    build: ./automation
+    container_name: greylog-log-automation
+    depends_on:
+      - greylog
+    environment:
+      # IMPORTANT: inside docker, use the service name (greylog), not localhost
+      - GRAYLOG_URL=http://greylog:9000
+      - GRAYLOG_API_TOKEN=${GRAYLOG_API_TOKEN}
+
+      # Change this later to target streams, e.g. "stream:ssh" or "event_type:failed_login"
+      - GRAYLOG_QUERY=*
+
+      - POLL_SECONDS=30
+      - BATCH_LIMIT=500
+      - OUT_DIR=/out
+      - CHECKPOINT_FILE=/out/checkpoint.json
+
+      # keep true since you're using http. If you switch to https self-signed, set false.
+      - GRAYLOG_VERIFY_TLS=true
+    volumes:
+      - ./out:/out
     restart: unless-stopped
 
 volumes:
