@@ -130,7 +130,206 @@ If visible → parsing is working.
 
 
 
+# Phase 3 — Detection & Alerting (Completed)
 
+After parsing was confirmed to work, we implemented detection rules and alerts to simulate SOC monitoring.
+
+---
+
+## SSH Authentication Stream
+
+To separate SSH activity from general logs, a dedicated stream was created.
+
+### Stream Rule
+
+```
+event_type:sshd
+```
+
+### Purpose
+
+This ensures:
+
+* SSH logs are isolated
+* Detection rules run on relevant data only
+* Dashboards can focus on authentication activity
+
+---
+
+# Brute Force Detection Rule
+
+An Event Definition was created to detect repeated failed SSH logins.
+
+---
+
+## Event Definition Details
+
+### Title
+
+```
+SSH Brute Force Attempt
+```
+
+### Type
+
+Aggregation
+
+---
+
+### Search Query
+
+```
+event_type:sshd AND message:"Failed password"
+```
+
+---
+
+### Search Within
+
+```
+5 minutes
+```
+
+---
+
+### Execute Search Every
+
+```
+5 minutes
+```
+
+---
+
+### Group By Fields
+
+```
+source_ip
+username
+```
+
+---
+
+### Trigger Condition
+
+```
+count() >= 2
+```
+
+(Threshold intentionally kept low for lab testing.)
+
+---
+
+## Result
+
+Graylog generates an event when multiple failed SSH attempts come from the same IP within the time window.
+
+This simulates brute-force detection used in SOC environments.
+
+---
+
+# Email Notification Configuration
+
+Email notifications were configured so Graylog sends alerts when the detection rule triggers.
+
+---
+
+## SMTP Configuration
+
+Configured via:
+
+```
+.env
+docker-compose.yml
+```
+
+Using:
+
+* Gmail SMTP
+* Port 587
+* TLS enabled
+* Gmail App Password authentication
+
+---
+
+## Notification Behaviour
+
+When brute-force threshold is met:
+
+1. Graylog creates an event
+2. Notification triggers
+3. Email alert is sent to configured recipient
+
+This was tested successfully.
+
+---
+
+# Validation Performed
+
+We confirmed:
+
+✅ Logs ingest correctly
+✅ Extractors parse fields correctly
+✅ Stream routes SSH logs correctly
+✅ Detection rule triggers
+✅ Email notifications send successfully
+
+---
+
+# Current Project Status
+
+| Phase                   | Status     |
+| ----------------------- | ---------- |
+| Log Ingestion           | ✅ Complete |
+| Parsing & Normalisation | ✅ Complete |
+| Detection Rules         | ✅ Complete |
+| Email Alerts            | ✅ Complete |
+
+---
+
+# Handover to Dashboard Phase
+
+The next phase focuses on visualisation.
+
+---
+
+## For the Dashboard Teammate
+
+Use the following fields:
+
+* `source_ip`
+* `username`
+* `action`
+* `event_type`
+
+Primary stream:
+
+```
+SSHD Authentication
+```
+
+---
+
+## Suggested Dashboards
+
+1. Failed SSH logins over time
+2. Top source IPs
+3. Most targeted usernames
+4. Authentication success vs failure
+5. Brute force alert count
+
+---
+
+# Next Steps (Phase 4)
+
+* Build SOC-style dashboards
+* Add visual trend analysis
+* Optional: reporting automation
+
+---
+
+
+
+---
 
 
 
