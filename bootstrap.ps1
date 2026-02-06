@@ -119,7 +119,7 @@ function Ensure-Inputs($Headers, [string]$NodeId, $DesiredInputs) {
     $payload = @{
       title         = $inp.title
       type          = $inp.type
-      global        = $false
+      global        = $true
       node          = $NodeId
       configuration = $inp.attributes
     }
