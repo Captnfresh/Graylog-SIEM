@@ -11,7 +11,7 @@ This section allows any team member to spin up the lab and get identical parsing
 ## 1️. Clone Repository
 
 ```bash
-git clone https://github.com/Captnfresh/Greylog-SIEM.git
+git clone https://github.com/Captnfresh/Graylog-SIEM.git
 cd graylog-lab
 git checkout feature/phase2-graylog-parsing
 copy .env.example .env
