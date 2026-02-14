@@ -1,0 +1,1766 @@
+{
+  "v": 1,
+  "id": "c48303c8-736f-4c32-bd0f-00a328061d5f",
+  "rev": 1,
+  "name": "Security Monitoring ",
+  "summary": "Alerts, event definitions, notifications and streams",
+  "description": "Alerts, event definitions, notifications and streams",
+  "vendor": "Faith Okonoboh",
+  "url": "https://github.com/Captnfresh/Greylog-SIEM.git",
+  "parameters": [],
+  "entities": [
+    {
+      "v": "1",
+      "type": {
+        "name": "stream",
+        "version": "1"
+      },
+      "id": "225c2712-aa51-4f0b-8485-e71e504c55cb",
+      "data": {
+        "alarm_callbacks": [],
+        "outputs": [],
+        "remove_matches": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "title": {
+          "@type": "string",
+          "@value": "ssh_auth_new"
+        },
+        "stream_rules": [
+          {
+            "type": {
+              "@type": "string",
+              "@value": "EXACT"
+            },
+            "field": {
+              "@type": "string",
+              "@value": "event_type"
+            },
+            "value": {
+              "@type": "string",
+              "@value": "sshd"
+            },
+            "inverted": {
+              "@type": "boolean",
+              "@value": false
+            },
+            "description": {
+              "@type": "string",
+              "@value": ""
+            }
+          }
+        ],
+        "alert_conditions": [],
+        "matching_type": {
+          "@type": "string",
+          "@value": "AND"
+        },
+        "disabled": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "description": {
+          "@type": "string",
+          "@value": ""
+        },
+        "default_stream": {
+          "@type": "boolean",
+          "@value": false
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "notification",
+        "version": "1"
+      },
+      "id": "c9b0fca2-36e4-43cd-bd93-ee6a6773923a",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "Suspicious High SSH Activity "
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Detects unusually high SSH activity within 5 minutes.\nMay indicate automated attack or scanning behavior.\n"
+        },
+        "config": {
+          "sender_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "lookup_recipient_emails": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "html_body_template": {
+            "@type": "string",
+            "@value": "<table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr style=\"line-height:1.5\"><th colspan=\"2\" style=\"background-color:#e6e6e6\">Event Definition</th></tr>\n<tr><td width=\"200px\">Title</td><td>${event_definition_title}</td></tr>\n<tr><td>Description</td><td>${event_definition_description}</td></tr>\n<tr><td>Type</td><td>${event_definition_type}</td></tr>\n</tbody></table>\n<br /><table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr><th colspan=\"2\" style=\"background-color:#e6e6e6;line-height:1.5\">Event</th></tr>\n<tr><td>Alert Replay</td><td>${http_external_uri}alerts/${event.id}/replay-search</td></tr>\n<tr><td width=\"200px\">Timestamp</td><td>${event.timestamp}</td></tr>\n<tr><td>Message</td><td>${event.message}</td></tr>\n<tr><td>Source</td><td>${event.source}</td></tr>\n<tr><td>Key</td><td>${event.key}</td></tr>\n<tr><td>Priority</td><td>${event.priority}</td></tr>\n<tr><td>Alert</td><td>${event.alert}</td></tr>\n<tr><td>Timestamp Processing</td><td>${event.timestamp}</td></tr>\n<tr><td>Timerange Start</td><td>${event.timerange_start}</td></tr>\n<tr><td>Timerange End</td><td>${event.timerange_end}</td></tr>\n<tr><td>Source Streams</td><td>${event.source_streams}</td></tr>\n<tr><td>Fields</td><td><ul style=\"list-style-type:square;\">${foreach event.fields field}<li>${field.key}:${field.value}</li>${end}<ul></td></tr>\n</tbody></table>\n${if backlog}\n<br /><table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr><th style=\"background-color:#e6e6e6;line-height:1.5\">Backlog (Last messages accounting for this alert)</th></tr>\n${foreach backlog message}\n<tr><td>${message}</td></tr>\n${end}\n</tbody></table>\n${end}\n"
+          },
+          "recipients_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "replyTo": {
+            "@type": "string",
+            "@value": ""
+          },
+          "recipients_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "sender_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "subject": {
+            "@type": "string",
+            "@value": "Graylog event notification: ${event_definition_title}"
+          },
+          "reply_to_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "user_recipients": [],
+          "lookup_reply_to_email": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "sender": {
+            "@type": "string",
+            "@value": ""
+          },
+          "body_template": {
+            "@type": "string",
+            "@value": "--- [Event Definition] ---------------------------\nTitle:       ${event_definition_title}\nDescription: ${event_definition_description}\nType:        ${event_definition_type}\n--- [Event] --------------------------------------\nAlert Replay:         ${http_external_uri}alerts/${event.id}/replay-search\nTimestamp:            ${event.timestamp}\nMessage:              ${event.message}\nSource:               ${event.source}\nKey:                  ${event.key}\nPriority:             ${event.priority}\nAlert:                ${event.alert}\nTimestamp Processing: ${event.timestamp}\nTimerange Start:      ${event.timerange_start}\nTimerange End:        ${event.timerange_end}\nFields:\n${foreach event.fields field}  ${field.key}: ${field.value}\n${end}\n${if backlog}\n--- [Backlog] ------------------------------------\nLast messages accounting for this alert:\n${foreach backlog message}\n${message}\n${end}\n${end}\n"
+          },
+          "lookup_sender_email": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "type": "email-notification-v1",
+          "reply_to_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "email_recipients": [
+            "ceceenowon@gmail.com"
+          ],
+          "time_zone": {
+            "@type": "string",
+            "@value": "UTC"
+          }
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "notification",
+        "version": "1"
+      },
+      "id": "be574983-1013-43af-9065-eef7266b0953",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "Many SSH Attempts From One IP - Possible Password Spraying"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Detects high number of SSH authentication attempts from a single source IP within 5 minutes.\nMay indicate password spraying or brute force activity.\n"
+        },
+        "config": {
+          "sender_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "lookup_recipient_emails": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "html_body_template": {
+            "@type": "string",
+            "@value": "<table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr style=\"line-height:1.5\"><th colspan=\"2\" style=\"background-color:#e6e6e6\">Event Definition</th></tr>\n<tr><td width=\"200px\">Title</td><td>${event_definition_title}</td></tr>\n<tr><td>Description</td><td>${event_definition_description}</td></tr>\n<tr><td>Type</td><td>${event_definition_type}</td></tr>\n</tbody></table>\n<br /><table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr><th colspan=\"2\" style=\"background-color:#e6e6e6;line-height:1.5\">Event</th></tr>\n<tr><td>Alert Replay</td><td>${http_external_uri}alerts/${event.id}/replay-search</td></tr>\n<tr><td width=\"200px\">Timestamp</td><td>${event.timestamp}</td></tr>\n<tr><td>Message</td><td>${event.message}</td></tr>\n<tr><td>Source</td><td>${event.source}</td></tr>\n<tr><td>Key</td><td>${event.key}</td></tr>\n<tr><td>Priority</td><td>${event.priority}</td></tr>\n<tr><td>Alert</td><td>${event.alert}</td></tr>\n<tr><td>Timestamp Processing</td><td>${event.timestamp}</td></tr>\n<tr><td>Timerange Start</td><td>${event.timerange_start}</td></tr>\n<tr><td>Timerange End</td><td>${event.timerange_end}</td></tr>\n<tr><td>Source Streams</td><td>${event.source_streams}</td></tr>\n<tr><td>Fields</td><td><ul style=\"list-style-type:square;\">${foreach event.fields field}<li>${field.key}:${field.value}</li>${end}<ul></td></tr>\n</tbody></table>\n${if backlog}\n<br /><table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr><th style=\"background-color:#e6e6e6;line-height:1.5\">Backlog (Last messages accounting for this alert)</th></tr>\n${foreach backlog message}\n<tr><td>${message}</td></tr>\n${end}\n</tbody></table>\n${end}\n"
+          },
+          "recipients_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "replyTo": {
+            "@type": "string",
+            "@value": ""
+          },
+          "recipients_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "sender_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "subject": {
+            "@type": "string",
+            "@value": "Graylog event notification: ${event_definition_title}"
+          },
+          "reply_to_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "user_recipients": [],
+          "lookup_reply_to_email": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "sender": {
+            "@type": "string",
+            "@value": ""
+          },
+          "body_template": {
+            "@type": "string",
+            "@value": "--- [Event Definition] ---------------------------\nTitle:       ${event_definition_title}\nDescription: ${event_definition_description}\nType:        ${event_definition_type}\n--- [Event] --------------------------------------\nAlert Replay:         ${http_external_uri}alerts/${event.id}/replay-search\nTimestamp:            ${event.timestamp}\nMessage:              ${event.message}\nSource:               ${event.source}\nKey:                  ${event.key}\nPriority:             ${event.priority}\nAlert:                ${event.alert}\nTimestamp Processing: ${event.timestamp}\nTimerange Start:      ${event.timerange_start}\nTimerange End:        ${event.timerange_end}\nFields:\n${foreach event.fields field}  ${field.key}: ${field.value}\n${end}\n${if backlog}\n--- [Backlog] ------------------------------------\nLast messages accounting for this alert:\n${foreach backlog message}\n${message}\n${end}\n${end}\n"
+          },
+          "lookup_sender_email": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "type": "email-notification-v1",
+          "reply_to_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "email_recipients": [
+            "ceceenowon@gmail.com"
+          ],
+          "time_zone": {
+            "@type": "string",
+            "@value": "UTC"
+          }
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "002ddf45-53f7-4975-8da1-9f7869a2a3e5",
+      "data": {
+        "field_spec": {},
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 300000,
+          "query": {
+            "@type": "string",
+            "@value": "event_type:sshd AND message:\"invalid user\""
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "225c2712-aa51-4f0b-8485-e71e504c55cb"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "source_ip"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-source_ip",
+              "field": "source_ip"
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-source_ip"
+              },
+              "right": {
+                "expr": "number",
+                "value": 3
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "8ea59187-68b8-456b-8ce4-e1314a705b8e"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-02-12T09:10:07.936Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 0
+        },
+        "updated_at": "2026-02-12T09:05:40.951Z",
+        "title": {
+          "@type": "string",
+          "@value": "Invalid SSH User Enumeration Detected"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "key_spec": [],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Detects multiple SSH login attempts using invalid usernames.\nIndicates possible username enumeration attack.\n"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "f4bf887b-71b7-489f-9e00-6c05ed0663e8",
+      "data": {
+        "field_spec": {},
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 300000,
+          "query": {
+            "@type": "string",
+            "@value": "event_type:sshd AND message:failed password"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "225c2712-aa51-4f0b-8485-e71e504c55cb"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "username"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-username",
+              "field": "username"
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-username"
+              },
+              "right": {
+                "expr": "number",
+                "value": 10
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "de8f024f-0022-4f7a-b11b-27b10f93fb39"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-02-12T09:19:49.096Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 0
+        },
+        "updated_at": "2026-02-12T09:08:07.636Z",
+        "title": {
+          "@type": "string",
+          "@value": "Many Failed SSH Attempts Targeting One User - Possible Distributed Attack"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "key_spec": [],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Detects multiple failed SSH login attempts targeting the same username within 5 minutes.\nMay indicate a distributed brute force attack.\n"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "notification",
+        "version": "1"
+      },
+      "id": "23411e21-fc04-4ed3-b3a7-bdd5fd130dfc",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "Root Login Attempt Detected"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Detects any SSH login attempt using the root account.\n"
+        },
+        "config": {
+          "sender_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "lookup_recipient_emails": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "html_body_template": {
+            "@type": "string",
+            "@value": "<table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr style=\"line-height:1.5\"><th colspan=\"2\" style=\"background-color:#e6e6e6\">Event Definition</th></tr>\n<tr><td width=\"200px\">Title</td><td>${event_definition_title}</td></tr>\n<tr><td>Description</td><td>${event_definition_description}</td></tr>\n<tr><td>Type</td><td>${event_definition_type}</td></tr>\n</tbody></table>\n<br /><table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr><th colspan=\"2\" style=\"background-color:#e6e6e6;line-height:1.5\">Event</th></tr>\n<tr><td>Alert Replay</td><td>${http_external_uri}alerts/${event.id}/replay-search</td></tr>\n<tr><td width=\"200px\">Timestamp</td><td>${event.timestamp}</td></tr>\n<tr><td>Message</td><td>${event.message}</td></tr>\n<tr><td>Source</td><td>${event.source}</td></tr>\n<tr><td>Key</td><td>${event.key}</td></tr>\n<tr><td>Priority</td><td>${event.priority}</td></tr>\n<tr><td>Alert</td><td>${event.alert}</td></tr>\n<tr><td>Timestamp Processing</td><td>${event.timestamp}</td></tr>\n<tr><td>Timerange Start</td><td>${event.timerange_start}</td></tr>\n<tr><td>Timerange End</td><td>${event.timerange_end}</td></tr>\n<tr><td>Source Streams</td><td>${event.source_streams}</td></tr>\n<tr><td>Fields</td><td><ul style=\"list-style-type:square;\">${foreach event.fields field}<li>${field.key}:${field.value}</li>${end}<ul></td></tr>\n</tbody></table>\n${if backlog}\n<br /><table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr><th style=\"background-color:#e6e6e6;line-height:1.5\">Backlog (Last messages accounting for this alert)</th></tr>\n${foreach backlog message}\n<tr><td>${message}</td></tr>\n${end}\n</tbody></table>\n${end}\n"
+          },
+          "recipients_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "replyTo": {
+            "@type": "string",
+            "@value": ""
+          },
+          "recipients_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "sender_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "subject": {
+            "@type": "string",
+            "@value": "Graylog event notification: ${event_definition_title}"
+          },
+          "reply_to_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "user_recipients": [],
+          "lookup_reply_to_email": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "sender": {
+            "@type": "string",
+            "@value": ""
+          },
+          "body_template": {
+            "@type": "string",
+            "@value": "--- [Event Definition] ---------------------------\nTitle:       ${event_definition_title}\nDescription: ${event_definition_description}\nType:        ${event_definition_type}\n--- [Event] --------------------------------------\nAlert Replay:         ${http_external_uri}alerts/${event.id}/replay-search\nTimestamp:            ${event.timestamp}\nMessage:              ${event.message}\nSource:               ${event.source}\nKey:                  ${event.key}\nPriority:             ${event.priority}\nAlert:                ${event.alert}\nTimestamp Processing: ${event.timestamp}\nTimerange Start:      ${event.timerange_start}\nTimerange End:        ${event.timerange_end}\nFields:\n${foreach event.fields field}  ${field.key}: ${field.value}\n${end}\n${if backlog}\n--- [Backlog] ------------------------------------\nLast messages accounting for this alert:\n${foreach backlog message}\n${message}\n${end}\n${end}\n"
+          },
+          "lookup_sender_email": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "type": "email-notification-v1",
+          "reply_to_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "email_recipients": [
+            "ceceenowon@gmail.com"
+          ],
+          "time_zone": {
+            "@type": "string",
+            "@value": "UTC"
+          }
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "eefe15ba-c153-4683-a8e8-17bb610bc04a",
+      "data": {
+        "field_spec": {},
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 300000,
+          "query": {
+            "@type": "string",
+            "@value": "event_type:sshd AND message:failed password"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "225c2712-aa51-4f0b-8485-e71e504c55cb"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "username"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-username",
+              "field": "username"
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-username"
+              },
+              "right": {
+                "expr": "number",
+                "value": 5
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "1f2eca5c-ab6f-4af3-a8e4-637d197031ee"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-02-11T20:31:54.823Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 0
+        },
+        "updated_at": "2026-02-12T09:25:06.057Z",
+        "title": {
+          "@type": "string",
+          "@value": "Username Targeting Attack - Multiple Failures Against Same User"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "key_spec": [],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Detects repeated failed SSH login attempts targeting a single username within 5 minutes.\n"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "notification",
+        "version": "1"
+      },
+      "id": "1f2eca5c-ab6f-4af3-a8e4-637d197031ee",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "Multiple Failures for Same User"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Username Targeting - Multiple Failures for Same User"
+        },
+        "config": {
+          "sender_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "lookup_recipient_emails": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "html_body_template": {
+            "@type": "string",
+            "@value": "<table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr style=\"line-height:1.5\"><th colspan=\"2\" style=\"background-color:#e6e6e6\">Event Definition</th></tr>\n<tr><td width=\"200px\">Title</td><td>${event_definition_title}</td></tr>\n<tr><td>Description</td><td>${event_definition_description}</td></tr>\n<tr><td>Type</td><td>${event_definition_type}</td></tr>\n</tbody></table>\n<br /><table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr><th colspan=\"2\" style=\"background-color:#e6e6e6;line-height:1.5\">Event</th></tr>\n<tr><td>Alert Replay</td><td>${http_external_uri}alerts/${event.id}/replay-search</td></tr>\n<tr><td width=\"200px\">Timestamp</td><td>${event.timestamp}</td></tr>\n<tr><td>Message</td><td>${event.message}</td></tr>\n<tr><td>Source</td><td>${event.source}</td></tr>\n<tr><td>Key</td><td>${event.key}</td></tr>\n<tr><td>Priority</td><td>${event.priority}</td></tr>\n<tr><td>Alert</td><td>${event.alert}</td></tr>\n<tr><td>Timestamp Processing</td><td>${event.timestamp}</td></tr>\n<tr><td>Timerange Start</td><td>${event.timerange_start}</td></tr>\n<tr><td>Timerange End</td><td>${event.timerange_end}</td></tr>\n<tr><td>Source Streams</td><td>${event.source_streams}</td></tr>\n<tr><td>Fields</td><td><ul style=\"list-style-type:square;\">${foreach event.fields field}<li>${field.key}:${field.value}</li>${end}<ul></td></tr>\n</tbody></table>\n${if backlog}\n<br /><table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr><th style=\"background-color:#e6e6e6;line-height:1.5\">Backlog (Last messages accounting for this alert)</th></tr>\n${foreach backlog message}\n<tr><td>${message}</td></tr>\n${end}\n</tbody></table>\n${end}\n"
+          },
+          "recipients_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "replyTo": {
+            "@type": "string",
+            "@value": ""
+          },
+          "recipients_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "sender_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "subject": {
+            "@type": "string",
+            "@value": "Graylog event notification: ${event_definition_title}"
+          },
+          "reply_to_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "user_recipients": [],
+          "lookup_reply_to_email": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "sender": {
+            "@type": "string",
+            "@value": ""
+          },
+          "body_template": {
+            "@type": "string",
+            "@value": "--- [Event Definition] ---------------------------\nTitle:       ${event_definition_title}\nDescription: ${event_definition_description}\nType:        ${event_definition_type}\n--- [Event] --------------------------------------\nAlert Replay:         ${http_external_uri}alerts/${event.id}/replay-search\nTimestamp:            ${event.timestamp}\nMessage:              ${event.message}\nSource:               ${event.source}\nKey:                  ${event.key}\nPriority:             ${event.priority}\nAlert:                ${event.alert}\nTimestamp Processing: ${event.timestamp}\nTimerange Start:      ${event.timerange_start}\nTimerange End:        ${event.timerange_end}\nFields:\n${foreach event.fields field}  ${field.key}: ${field.value}\n${end}\n${if backlog}\n--- [Backlog] ------------------------------------\nLast messages accounting for this alert:\n${foreach backlog message}\n${message}\n${end}\n${end}\n"
+          },
+          "lookup_sender_email": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "type": "email-notification-v1",
+          "reply_to_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "email_recipients": [
+            "ceceenowon@gmail.com"
+          ],
+          "time_zone": {
+            "@type": "string",
+            "@value": "UTC"
+          }
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "notification",
+        "version": "1"
+      },
+      "id": "ae9f4da0-ff2b-4580-9a76-0e2436605d3e",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "Successful SSH Login Detected"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Detects successful SSH login activity.\nSOC teams monitor successful access closely.\n"
+        },
+        "config": {
+          "sender_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "lookup_recipient_emails": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "html_body_template": {
+            "@type": "string",
+            "@value": "<table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr style=\"line-height:1.5\"><th colspan=\"2\" style=\"background-color:#e6e6e6\">Event Definition</th></tr>\n<tr><td width=\"200px\">Title</td><td>${event_definition_title}</td></tr>\n<tr><td>Description</td><td>${event_definition_description}</td></tr>\n<tr><td>Type</td><td>${event_definition_type}</td></tr>\n</tbody></table>\n<br /><table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr><th colspan=\"2\" style=\"background-color:#e6e6e6;line-height:1.5\">Event</th></tr>\n<tr><td>Alert Replay</td><td>${http_external_uri}alerts/${event.id}/replay-search</td></tr>\n<tr><td width=\"200px\">Timestamp</td><td>${event.timestamp}</td></tr>\n<tr><td>Message</td><td>${event.message}</td></tr>\n<tr><td>Source</td><td>${event.source}</td></tr>\n<tr><td>Key</td><td>${event.key}</td></tr>\n<tr><td>Priority</td><td>${event.priority}</td></tr>\n<tr><td>Alert</td><td>${event.alert}</td></tr>\n<tr><td>Timestamp Processing</td><td>${event.timestamp}</td></tr>\n<tr><td>Timerange Start</td><td>${event.timerange_start}</td></tr>\n<tr><td>Timerange End</td><td>${event.timerange_end}</td></tr>\n<tr><td>Source Streams</td><td>${event.source_streams}</td></tr>\n<tr><td>Fields</td><td><ul style=\"list-style-type:square;\">${foreach event.fields field}<li>${field.key}:${field.value}</li>${end}<ul></td></tr>\n</tbody></table>\n${if backlog}\n<br /><table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr><th style=\"background-color:#e6e6e6;line-height:1.5\">Backlog (Last messages accounting for this alert)</th></tr>\n${foreach backlog message}\n<tr><td>${message}</td></tr>\n${end}\n</tbody></table>\n${end}\n"
+          },
+          "recipients_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "replyTo": {
+            "@type": "string",
+            "@value": ""
+          },
+          "recipients_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "sender_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "subject": {
+            "@type": "string",
+            "@value": "Graylog event notification: ${event_definition_title}"
+          },
+          "reply_to_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "user_recipients": [],
+          "lookup_reply_to_email": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "sender": {
+            "@type": "string",
+            "@value": ""
+          },
+          "body_template": {
+            "@type": "string",
+            "@value": "--- [Event Definition] ---------------------------\nTitle:       ${event_definition_title}\nDescription: ${event_definition_description}\nType:        ${event_definition_type}\n--- [Event] --------------------------------------\nAlert Replay:         ${http_external_uri}alerts/${event.id}/replay-search\nTimestamp:            ${event.timestamp}\nMessage:              ${event.message}\nSource:               ${event.source}\nKey:                  ${event.key}\nPriority:             ${event.priority}\nAlert:                ${event.alert}\nTimestamp Processing: ${event.timestamp}\nTimerange Start:      ${event.timerange_start}\nTimerange End:        ${event.timerange_end}\nFields:\n${foreach event.fields field}  ${field.key}: ${field.value}\n${end}\n${if backlog}\n--- [Backlog] ------------------------------------\nLast messages accounting for this alert:\n${foreach backlog message}\n${message}\n${end}\n${end}\n"
+          },
+          "lookup_sender_email": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "type": "email-notification-v1",
+          "reply_to_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "email_recipients": [
+            "ceceenowon@gmail.com"
+          ],
+          "time_zone": {
+            "@type": "string",
+            "@value": "UTC"
+          }
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "c020a47c-6927-4b65-898c-21e7579dc8e9",
+      "data": {
+        "field_spec": {},
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 300000,
+          "query": {
+            "@type": "string",
+            "@value": "event_type:sshd"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "225c2712-aa51-4f0b-8485-e71e504c55cb"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-",
+              "field": null
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-"
+              },
+              "right": {
+                "expr": "number",
+                "value": 30
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "c9b0fca2-36e4-43cd-bd93-ee6a6773923a"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": null,
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 0
+        },
+        "updated_at": "2026-02-12T09:24:11.965Z",
+        "title": {
+          "@type": "string",
+          "@value": "Suspicious High SSH Activity - Activity Spike Detected"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "key_spec": [],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Detects unusually high SSH activity within 5 minutes.\nMay indicate automated attack or scanning behavior.\n"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "ed3ed602-9c73-431c-9f52-9cef335364e1",
+      "data": {
+        "field_spec": {},
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 300000,
+          "query": {
+            "@type": "string",
+            "@value": "event_type:sshd"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "225c2712-aa51-4f0b-8485-e71e504c55cb"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "source_ip"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-source_ip",
+              "field": "source_ip"
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-source_ip"
+              },
+              "right": {
+                "expr": "number",
+                "value": 10
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "be574983-1013-43af-9065-eef7266b0953"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-02-12T09:20:04.539Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 0
+        },
+        "updated_at": "2026-02-12T09:15:17.396Z",
+        "title": {
+          "@type": "string",
+          "@value": "Many SSH Attempts From One IP - Possible Password Spraying"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "key_spec": [],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Detects high number of SSH authentication attempts from a single source IP within 5 minutes.\nMay indicate password spraying or brute force activity.\n"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "df9fb026-b1b5-4510-a52a-ec1dbfd45841",
+      "data": {
+        "field_spec": {},
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 300000,
+          "query": {
+            "@type": "string",
+            "@value": "event_type:sshd AND username:root"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "225c2712-aa51-4f0b-8485-e71e504c55cb"
+          ],
+          "execute_every_ms": 300000,
+          "event_limit": 100,
+          "group_by": [],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-",
+              "field": null
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-"
+              },
+              "right": {
+                "expr": "number",
+                "value": 1
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "23411e21-fc04-4ed3-b3a7-bdd5fd130dfc"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-02-12T09:21:09.866Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 0
+        },
+        "updated_at": "2026-02-12T09:18:27.669Z",
+        "title": {
+          "@type": "string",
+          "@value": "Root Login Attempt Detected"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "key_spec": [],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Detects any SSH login attempt using the root account.\n"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "notification",
+        "version": "1"
+      },
+      "id": "dd81a027-e3fd-4a1e-8266-9d77036c9015",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "SSH Brute Force - Multiple Failures From Same IP"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Detects multiple failed SSH login attempts from a single source IP within 5 minutes.\n"
+        },
+        "config": {
+          "sender_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "lookup_recipient_emails": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "html_body_template": {
+            "@type": "string",
+            "@value": "<table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr style=\"line-height:1.5\"><th colspan=\"2\" style=\"background-color:#e6e6e6\">Event Definition</th></tr>\n<tr><td width=\"200px\">Title</td><td>${event_definition_title}</td></tr>\n<tr><td>Description</td><td>${event_definition_description}</td></tr>\n<tr><td>Type</td><td>${event_definition_type}</td></tr>\n</tbody></table>\n<br /><table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr><th colspan=\"2\" style=\"background-color:#e6e6e6;line-height:1.5\">Event</th></tr>\n<tr><td>Alert Replay</td><td>${http_external_uri}alerts/${event.id}/replay-search</td></tr>\n<tr><td width=\"200px\">Timestamp</td><td>${event.timestamp}</td></tr>\n<tr><td>Message</td><td>${event.message}</td></tr>\n<tr><td>Source</td><td>${event.source}</td></tr>\n<tr><td>Key</td><td>${event.key}</td></tr>\n<tr><td>Priority</td><td>${event.priority}</td></tr>\n<tr><td>Alert</td><td>${event.alert}</td></tr>\n<tr><td>Timestamp Processing</td><td>${event.timestamp}</td></tr>\n<tr><td>Timerange Start</td><td>${event.timerange_start}</td></tr>\n<tr><td>Timerange End</td><td>${event.timerange_end}</td></tr>\n<tr><td>Source Streams</td><td>${event.source_streams}</td></tr>\n<tr><td>Fields</td><td><ul style=\"list-style-type:square;\">${foreach event.fields field}<li>${field.key}:${field.value}</li>${end}<ul></td></tr>\n</tbody></table>\n${if backlog}\n<br /><table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr><th style=\"background-color:#e6e6e6;line-height:1.5\">Backlog (Last messages accounting for this alert)</th></tr>\n${foreach backlog message}\n<tr><td>${message}</td></tr>\n${end}\n</tbody></table>\n${end}\n"
+          },
+          "recipients_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "replyTo": {
+            "@type": "string",
+            "@value": ""
+          },
+          "recipients_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "sender_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "subject": {
+            "@type": "string",
+            "@value": "Graylog event notification: ${event_definition_title}"
+          },
+          "reply_to_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "user_recipients": [],
+          "lookup_reply_to_email": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "sender": {
+            "@type": "string",
+            "@value": ""
+          },
+          "body_template": {
+            "@type": "string",
+            "@value": "--- [Event Definition] ---------------------------\nTitle:       ${event_definition_title}\nDescription: ${event_definition_description}\nType:        ${event_definition_type}\n--- [Event] --------------------------------------\nAlert Replay:         ${http_external_uri}alerts/${event.id}/replay-search\nTimestamp:            ${event.timestamp}\nMessage:              ${event.message}\nSource:               ${event.source}\nKey:                  ${event.key}\nPriority:             ${event.priority}\nAlert:                ${event.alert}\nTimestamp Processing: ${event.timestamp}\nTimerange Start:      ${event.timerange_start}\nTimerange End:        ${event.timerange_end}\nFields:\n${foreach event.fields field}  ${field.key}: ${field.value}\n${end}\n${if backlog}\n--- [Backlog] ------------------------------------\nLast messages accounting for this alert:\n${foreach backlog message}\n${message}\n${end}\n${end}\n"
+          },
+          "lookup_sender_email": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "type": "email-notification-v1",
+          "reply_to_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "email_recipients": [
+            "ceceenowon@gmail.com"
+          ],
+          "time_zone": {
+            "@type": "string",
+            "@value": "UTC"
+          }
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "6c505e91-84bc-49b7-a598-4f0436463b72",
+      "data": {
+        "field_spec": {},
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 300000,
+          "query": {
+            "@type": "string",
+            "@value": "event_type:sshd "
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "225c2712-aa51-4f0b-8485-e71e504c55cb"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-",
+              "field": null
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-"
+              },
+              "right": {
+                "expr": "number",
+                "value": 2
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [],
+        "remediation_steps": null,
+        "matched_at": "2026-02-12T09:26:45.940Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 0
+        },
+        "updated_at": "2026-02-12T09:02:45.921Z",
+        "title": {
+          "@type": "string",
+          "@value": "Testing"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "key_spec": [],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "description": {
+          "@type": "string",
+          "@value": "testing"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "notification",
+        "version": "1"
+      },
+      "id": "8ea59187-68b8-456b-8ce4-e1314a705b8e",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "Invalid SSH User Enumeration Detected"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Detects multiple SSH login attempts using invalid usernames.\nIndicates possible username enumeration attack.\n"
+        },
+        "config": {
+          "sender_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "lookup_recipient_emails": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "html_body_template": {
+            "@type": "string",
+            "@value": "<table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr style=\"line-height:1.5\"><th colspan=\"2\" style=\"background-color:#e6e6e6\">Event Definition</th></tr>\n<tr><td width=\"200px\">Title</td><td>${event_definition_title}</td></tr>\n<tr><td>Description</td><td>${event_definition_description}</td></tr>\n<tr><td>Type</td><td>${event_definition_type}</td></tr>\n</tbody></table>\n<br /><table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr><th colspan=\"2\" style=\"background-color:#e6e6e6;line-height:1.5\">Event</th></tr>\n<tr><td>Alert Replay</td><td>${http_external_uri}alerts/${event.id}/replay-search</td></tr>\n<tr><td width=\"200px\">Timestamp</td><td>${event.timestamp}</td></tr>\n<tr><td>Message</td><td>${event.message}</td></tr>\n<tr><td>Source</td><td>${event.source}</td></tr>\n<tr><td>Key</td><td>${event.key}</td></tr>\n<tr><td>Priority</td><td>${event.priority}</td></tr>\n<tr><td>Alert</td><td>${event.alert}</td></tr>\n<tr><td>Timestamp Processing</td><td>${event.timestamp}</td></tr>\n<tr><td>Timerange Start</td><td>${event.timerange_start}</td></tr>\n<tr><td>Timerange End</td><td>${event.timerange_end}</td></tr>\n<tr><td>Source Streams</td><td>${event.source_streams}</td></tr>\n<tr><td>Fields</td><td><ul style=\"list-style-type:square;\">${foreach event.fields field}<li>${field.key}:${field.value}</li>${end}<ul></td></tr>\n</tbody></table>\n${if backlog}\n<br /><table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr><th style=\"background-color:#e6e6e6;line-height:1.5\">Backlog (Last messages accounting for this alert)</th></tr>\n${foreach backlog message}\n<tr><td>${message}</td></tr>\n${end}\n</tbody></table>\n${end}\n"
+          },
+          "recipients_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "replyTo": {
+            "@type": "string",
+            "@value": ""
+          },
+          "recipients_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "sender_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "subject": {
+            "@type": "string",
+            "@value": "Graylog event notification: ${event_definition_title}"
+          },
+          "reply_to_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "user_recipients": [],
+          "lookup_reply_to_email": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "sender": {
+            "@type": "string",
+            "@value": ""
+          },
+          "body_template": {
+            "@type": "string",
+            "@value": "--- [Event Definition] ---------------------------\nTitle:       ${event_definition_title}\nDescription: ${event_definition_description}\nType:        ${event_definition_type}\n--- [Event] --------------------------------------\nAlert Replay:         ${http_external_uri}alerts/${event.id}/replay-search\nTimestamp:            ${event.timestamp}\nMessage:              ${event.message}\nSource:               ${event.source}\nKey:                  ${event.key}\nPriority:             ${event.priority}\nAlert:                ${event.alert}\nTimestamp Processing: ${event.timestamp}\nTimerange Start:      ${event.timerange_start}\nTimerange End:        ${event.timerange_end}\nFields:\n${foreach event.fields field}  ${field.key}: ${field.value}\n${end}\n${if backlog}\n--- [Backlog] ------------------------------------\nLast messages accounting for this alert:\n${foreach backlog message}\n${message}\n${end}\n${end}\n"
+          },
+          "lookup_sender_email": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "type": "email-notification-v1",
+          "reply_to_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "email_recipients": [
+            "ceceenowon@gmail.com"
+          ],
+          "time_zone": {
+            "@type": "string",
+            "@value": "UTC"
+          }
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "ac71c4f5-a726-4bfc-8bf4-d3c19fbd31f1",
+      "data": {
+        "field_spec": {},
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 300000,
+          "query": {
+            "@type": "string",
+            "@value": "event_type:sshd AND message:\"Failed password\""
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "225c2712-aa51-4f0b-8485-e71e504c55cb"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "source_ip"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-source_ip",
+              "field": "source_ip"
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-source_ip"
+              },
+              "right": {
+                "expr": "number",
+                "value": 5
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "dd81a027-e3fd-4a1e-8266-9d77036c9015"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-02-12T09:21:46.963Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 0
+        },
+        "updated_at": "2026-02-12T09:21:45.979Z",
+        "title": {
+          "@type": "string",
+          "@value": "SSH Brute Force - Multiple Failures From Same IP"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "key_spec": [],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Detects multiple failed SSH login attempts from a single source IP within 5 minutes.\n"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "notification",
+        "version": "1"
+      },
+      "id": "de8f024f-0022-4f7a-b11b-27b10f93fb39",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "Many Failed SSH Attempts Targeting One User - Possible Distributed Attack"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Detects multiple failed SSH login attempts targeting the same username within 5 minutes.\nMay indicate a distributed brute force attack.\n"
+        },
+        "config": {
+          "sender_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "lookup_recipient_emails": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "html_body_template": {
+            "@type": "string",
+            "@value": "<table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr style=\"line-height:1.5\"><th colspan=\"2\" style=\"background-color:#e6e6e6\">Event Definition</th></tr>\n<tr><td width=\"200px\">Title</td><td>${event_definition_title}</td></tr>\n<tr><td>Description</td><td>${event_definition_description}</td></tr>\n<tr><td>Type</td><td>${event_definition_type}</td></tr>\n</tbody></table>\n<br /><table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr><th colspan=\"2\" style=\"background-color:#e6e6e6;line-height:1.5\">Event</th></tr>\n<tr><td>Alert Replay</td><td>${http_external_uri}alerts/${event.id}/replay-search</td></tr>\n<tr><td width=\"200px\">Timestamp</td><td>${event.timestamp}</td></tr>\n<tr><td>Message</td><td>${event.message}</td></tr>\n<tr><td>Source</td><td>${event.source}</td></tr>\n<tr><td>Key</td><td>${event.key}</td></tr>\n<tr><td>Priority</td><td>${event.priority}</td></tr>\n<tr><td>Alert</td><td>${event.alert}</td></tr>\n<tr><td>Timestamp Processing</td><td>${event.timestamp}</td></tr>\n<tr><td>Timerange Start</td><td>${event.timerange_start}</td></tr>\n<tr><td>Timerange End</td><td>${event.timerange_end}</td></tr>\n<tr><td>Source Streams</td><td>${event.source_streams}</td></tr>\n<tr><td>Fields</td><td><ul style=\"list-style-type:square;\">${foreach event.fields field}<li>${field.key}:${field.value}</li>${end}<ul></td></tr>\n</tbody></table>\n${if backlog}\n<br /><table width=\"100%\" border=\"0\" cellpadding=\"10\" cellspacing=\"0\" style=\"background-color:#f9f9f9;border:none;line-height:1.2\"><tbody>\n<tr><th style=\"background-color:#e6e6e6;line-height:1.5\">Backlog (Last messages accounting for this alert)</th></tr>\n${foreach backlog message}\n<tr><td>${message}</td></tr>\n${end}\n</tbody></table>\n${end}\n"
+          },
+          "recipients_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "replyTo": {
+            "@type": "string",
+            "@value": ""
+          },
+          "recipients_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "sender_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "subject": {
+            "@type": "string",
+            "@value": "Graylog event notification: ${event_definition_title}"
+          },
+          "reply_to_lut_name": {
+            "@type": "string",
+            "@value": ""
+          },
+          "user_recipients": [],
+          "lookup_reply_to_email": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "sender": {
+            "@type": "string",
+            "@value": ""
+          },
+          "body_template": {
+            "@type": "string",
+            "@value": "--- [Event Definition] ---------------------------\nTitle:       ${event_definition_title}\nDescription: ${event_definition_description}\nType:        ${event_definition_type}\n--- [Event] --------------------------------------\nAlert Replay:         ${http_external_uri}alerts/${event.id}/replay-search\nTimestamp:            ${event.timestamp}\nMessage:              ${event.message}\nSource:               ${event.source}\nKey:                  ${event.key}\nPriority:             ${event.priority}\nAlert:                ${event.alert}\nTimestamp Processing: ${event.timestamp}\nTimerange Start:      ${event.timerange_start}\nTimerange End:        ${event.timerange_end}\nFields:\n${foreach event.fields field}  ${field.key}: ${field.value}\n${end}\n${if backlog}\n--- [Backlog] ------------------------------------\nLast messages accounting for this alert:\n${foreach backlog message}\n${message}\n${end}\n${end}\n"
+          },
+          "lookup_sender_email": {
+            "@type": "boolean",
+            "@value": false
+          },
+          "type": "email-notification-v1",
+          "reply_to_lut_key": {
+            "@type": "string",
+            "@value": ""
+          },
+          "email_recipients": [
+            "ceceenowon@gmail.com"
+          ],
+          "time_zone": {
+            "@type": "string",
+            "@value": "UTC"
+          }
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    },
+    {
+      "v": "1",
+      "type": {
+        "name": "event_definition",
+        "version": "1"
+      },
+      "id": "dc61e61a-13d5-47a5-8182-a30090a83d37",
+      "data": {
+        "field_spec": {},
+        "config": {
+          "query_parameters": [],
+          "search_within_ms": 300000,
+          "query": {
+            "@type": "string",
+            "@value": "event_type:sshd AND message:accepted password"
+          },
+          "cron_expression": null,
+          "cron_timezone": null,
+          "use_cron_scheduling": false,
+          "streams": [
+            "225c2712-aa51-4f0b-8485-e71e504c55cb"
+          ],
+          "execute_every_ms": 60000,
+          "event_limit": 100,
+          "group_by": [
+            "source_ip"
+          ],
+          "series": [
+            {
+              "type": "count",
+              "id": "count-source_ip",
+              "field": "source_ip"
+            }
+          ],
+          "conditions": {
+            "expression": {
+              "expr": ">=",
+              "left": {
+                "expr": "number-ref",
+                "ref": "count-source_ip"
+              },
+              "right": {
+                "expr": "number",
+                "value": 1
+              }
+            }
+          },
+          "type": "aggregation-v1",
+          "stream_categories": [],
+          "filters": []
+        },
+        "priority": {
+          "@type": "integer",
+          "@value": 3
+        },
+        "notifications": [
+          {
+            "notification_id": {
+              "@type": "string",
+              "@value": "ae9f4da0-ff2b-4580-9a76-0e2436605d3e"
+            },
+            "notification_parameters": null
+          }
+        ],
+        "remediation_steps": null,
+        "matched_at": "2026-02-12T09:26:45.032Z",
+        "_scope": {
+          "@type": "string",
+          "@value": "DEFAULT"
+        },
+        "notification_settings": {
+          "grace_period_ms": 300000,
+          "backlog_size": 0
+        },
+        "updated_at": "2026-02-12T09:22:17.562Z",
+        "title": {
+          "@type": "string",
+          "@value": "Successful SSH Login Detected"
+        },
+        "is_scheduled": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "key_spec": [],
+        "storage": [
+          {
+            "type": "persist-to-streams-v1",
+            "streams": [
+              "000000000000000000000002"
+            ]
+          }
+        ],
+        "alert": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Detects successful SSH login activity.\nSOC teams monitor successful access closely.\n"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=6.1.16+4a05695"
+        }
+      ]
+    }
+  ]
+}
