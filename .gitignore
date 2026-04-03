@@ -1,6 +1,9 @@
 # Don't push secrets
 .env
 
+# Claude Code local settings (machine-specific)
+.claude/settings.local.json
+
 # OS / Editor junk
 .DS_Store
 Thumbs.db
