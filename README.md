@@ -17,159 +17,204 @@ A full-stack Security Information and Event Management (SIEM) platform with an A
 
 ---
 
-## Getting Started — Clone and Run Locally
+## Getting Started — Team Setup Guide
 
-### Prerequisites
+> **You will need two things before starting — ask the team lead on WhatsApp:**
+> 1. The **Anthropic API key** (`sk-ant-...`)
+> 2. The shared **admin password** the team is using (e.g. `Admin@12345`)
 
-Make sure you have the following installed before starting:
+---
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (includes Docker Compose)
-- [Git](https://git-scm.com/downloads)
-- Windows users: WSL 2 enabled (Docker Desktop installs this automatically)
+### Before you begin — install these two things
 
-Verify Docker is working:
+| Tool | What it is | Download |
+|---|---|---|
+| **Docker Desktop** | Runs all the app services | [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/) |
+| **Git** | Downloads the code from GitHub | [git-scm.com/downloads](https://git-scm.com/downloads) |
+
+Once installed, **restart your PC**, then open **Command Prompt** (Windows) or **Terminal** (Mac) and confirm Docker is working:
 
 ```bash
 docker compose version
 ```
 
+You should see a version number. If you get an error, make sure Docker Desktop is open and running in the background.
+
 ---
 
 ### Step 1 — Clone the repository
 
+This downloads the project to your PC. Run this in Command Prompt / Terminal:
+
 ```bash
 git clone https://github.com/Captnfresh/Greylog-SIEM.git
+```
+
+Then move into the project folder:
+
+```bash
 cd Greylog-SIEM
 ```
 
 ---
 
-### Step 2 — Set the WSL memory setting (Windows only, required for OpenSearch)
+### Step 2 — Switch to the project branch
 
-OpenSearch needs a Linux kernel setting to run. Run this once each time you restart your PC:
+The main work lives on a specific branch. Switch to it with:
+
+```bash
+git checkout claude/reverent-vaughan
+```
+
+You should see:
+
+```
+Switched to branch 'claude/reverent-vaughan'
+```
+
+---
+
+### Step 3 — One-time memory fix (Windows only)
+
+OpenSearch needs a small system setting to run on Windows. Run this once — you'll need to repeat it each time you restart your PC:
 
 ```bash
 wsl -d docker-desktop sysctl -w vm.max_map_count=262144
 ```
 
-> **Mac/Linux users:** Run `sudo sysctl -w vm.max_map_count=262144` instead.
+> **Mac users:** Run `sudo sysctl -w vm.max_map_count=262144` instead.
 
 ---
 
-### Step 3 — Create your local `.env` file
+### Step 4 — Create your `.env` file
 
-The `.env` file holds secrets and is **never committed to GitHub**. You need to create it locally.
+The `.env` file contains passwords and API keys. It is **never uploaded to GitHub** — everyone creates their own copy locally.
 
-**Copy the example file:**
+**4a — Copy the template:**
 
 ```bash
 # Windows CMD
 copy .env.example .env
 
-# Mac / Linux / Git Bash
+# Mac / Git Bash
 cp .env.example .env
 ```
 
-**Generate a Graylog password secret** (required — must be at least 64 characters):
+**4b — Generate a secret key for Graylog** (paste the result into `.env` as `GRAYLOG_PASSWORD_SECRET`):
 
 ```bash
 docker run --rm alpine sh -c "cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 96; echo"
 ```
 
-Copy the output and paste it as `GRAYLOG_PASSWORD_SECRET` in your `.env`.
-
-**Generate a SHA-256 hash of your chosen admin password:**
+**4c — Generate a password hash** — replace `Admin@12345` below with whatever password the team lead shared:
 
 ```bash
-# Replace MyPassword123 with your chosen password
-docker run --rm python:3.12-alpine python -c "import hashlib; print(hashlib.sha256(b'MyPassword123').hexdigest())"
+docker run --rm python:3.12-alpine python -c "import hashlib; print(hashlib.sha256(b'Admin@12345').hexdigest())"
 ```
 
-Copy the output and paste it as `GRAYLOG_ROOT_PASSWORD_SHA2` in your `.env`.
+Paste the output as `GRAYLOG_ROOT_PASSWORD_SHA2` in your `.env`.
 
-**Fill in the remaining values** — your `.env` should look like this when done:
+**4d — Open `.env` in Notepad and fill in the blanks.** It should look like this when done:
 
 ```env
-# --- Graylog ---
-GRAYLOG_PASSWORD_SECRET=<96-char string you generated>
-GRAYLOG_ROOT_PASSWORD_SHA2=<sha256 hash you generated>
+GRAYLOG_PASSWORD_SECRET=<output from step 4b>
+GRAYLOG_ROOT_PASSWORD_SHA2=<output from step 4c>
 GRAYLOG_HTTP_EXTERNAL_URI=http://localhost:9000/
-
-# Plain-text version of your admin password (used by the backend API)
-GRAYLOG_ROOT_PASSWORD=MyPassword123
-
-# --- Claude / Anthropic ---
-# Get your key from: https://console.anthropic.com
-# Team lead will share this on WhatsApp
-ANTHROPIC_API_KEY=sk-ant-...
-
-# --- SMTP Email (optional — for alert notifications) ---
+GRAYLOG_ROOT_PASSWORD=Admin@12345
+ANTHROPIC_API_KEY=<API key from team lead>
 SMTP_ENABLED=false
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USE_AUTH=true
-SMTP_USE_TLS=true
-SMTP_USE_SSL=false
-SMTP_USERNAME=your@gmail.com
-SMTP_PASSWORD=your_app_password_here
-SMTP_FROM_EMAIL=your@gmail.com
 ```
 
-> **Note:** `GRAYLOG_ROOT_PASSWORD` must be the plain-text version of the same password you hashed for `GRAYLOG_ROOT_PASSWORD_SHA2`. The backend uses it to query the Graylog REST API.
+> Leave all the `SMTP_` lines as-is — email alerts are disabled by default.
 
 ---
 
-### Step 4 — Start the full stack
+### Step 5 — Launch Environment 1: Graylog SIEM Stack
+
+This starts Graylog, OpenSearch, MongoDB, the AI backend, and the log simulator — all at once:
 
 ```bash
 docker compose up -d --build
 ```
 
-This will build and start all 6 services. First run takes 3–5 minutes to download images and build containers.
+The **first run** takes 3–5 minutes to download and build everything. Subsequent starts are much faster.
 
-Check everything is running:
+Once it finishes, check everything is running:
 
 ```bash
 docker compose ps
 ```
 
-All services should show `Up` or `Up (healthy)`.
+You should see 5 containers all showing **Up**:
+
+```
+graylog                Up (healthy)
+graylog-mongodb        Up
+graylog-opensearch     Up
+omnilog-backend        Up
+omnilog-log-simulator  Up
+```
+
+> **Graylog takes about 60 seconds to fully start** after the containers show Up — this is normal. Wait a moment before opening the UI.
 
 ---
 
-### Step 5 — Access the apps
+### Step 6 — Launch Environment 2: OmniLog Chat UI
 
-| App | URL | Credentials |
+Open a **second** Command Prompt / Terminal window, make sure you are still in the `Greylog-SIEM` folder, then run:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+> **First time only:** `npm install` downloads the UI dependencies — takes ~1 minute.
+
+You should see:
+
+```
+  VITE v5.x.x  ready in ...ms
+  ➜  Local:   http://localhost:8080/
+```
+
+---
+
+### Step 7 — Open the apps
+
+You now have two environments running. Open these in your browser:
+
+| What | URL | Login |
 |---|---|---|
-| **OmniLog UI** | http://localhost:3000 | — |
-| **Graylog Web UI** | http://localhost:9000 | admin / your password |
-| **Backend API docs** | http://localhost:8000/docs | — |
+| 🤖 **OmniLog AI Chat** | http://localhost:8080 | No login needed |
+| 📊 **Graylog Dashboard** | http://localhost:9000 | `admin` / your password |
+
+The top-right corner of OmniLog should show **CONNECTED** in green. The sidebar will start showing live security event counts within a few seconds.
 
 ---
 
-### Step 6 — Install the SSH-SIEM Content Pack (optional but recommended)
+### Step 8 — Try it out
 
-The content pack adds pre-built SSH dashboards, streams, and alert rules to Graylog.
-
-1. Go to **http://localhost:9000** and log in
-2. Navigate to **System → Content Packs**
-3. Click **Upload**
-4. Upload the file: `content-pack-45312c4b-bc4d-4cf5-8799-b380c14aae09-1.json`
-5. When prompted for `graylog_host`, enter your machine's local IP address (e.g. `192.168.1.x`) — not `localhost`
-6. Click **Install**
-
----
-
-### Step 7 — Try OmniLog
-
-Open **http://localhost:3000** and try asking:
+In the OmniLog chat box, try asking:
 
 - *"Show failed login attempts"*
 - *"Any suspicious network activity?"*
 - *"What happened in the last 10 minutes?"*
 - *"Are there any brute force attacks?"*
 
-The log simulator runs automatically and sends realistic security events every 8 seconds. A coordinated attack scenario (brute force → port scan → SQL injection → data exfil) fires **once per hour** automatically so you can see the risk score spike and watch Claude analyse a real incident.
+The log simulator runs in the background automatically — it sends realistic SSH and network security events every 8 seconds. Once per hour it runs a full coordinated attack scenario (brute force → port scan → SQL injection → data exfiltration) so you can see the risk score spike and watch the AI analyse a live incident.
+
+---
+
+### Stopping everything
+
+When you're done, stop the SIEM stack with:
+
+```bash
+docker compose down
+```
+
+And press `Ctrl + C` in the terminal running the frontend to stop it.
 
 ---
 
