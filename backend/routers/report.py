@@ -3,7 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter
 from pydantic import BaseModel
 from services.graylog import graylog
-from services.claude import get_sync_client
+from services.claude import get_async_client
 from models.schemas import LogEntry
 from config import settings
 import anthropic
@@ -218,7 +218,7 @@ async def generate_report() -> ReportSection:
             "Respond with the JSON structure only."
         )
         try:
-            message = get_sync_client().messages.create(
+            message = await get_async_client().messages.create(
                 model="claude-sonnet-4-6",
                 max_tokens=8192,
                 system=REPORT_SYSTEM_PROMPT,
