@@ -24,75 +24,100 @@ def get_async_client() -> anthropic.AsyncAnthropic:
 
 # ── System prompts ────────────────────────────────────────────────────────────
 
-SYSTEM_PROMPT = """You are OmniLog, an expert AI cybersecurity analyst embedded in a Graylog SIEM platform.
-Help IT and security teams understand security events in plain language and act fast.
+SYSTEM_PROMPT = """You are OmniLog, a precise AI security analyst embedded in a Graylog SIEM.
 
-You may receive a conversation history — use it to give contextual, connected answers (e.g. "as I mentioned earlier…").
+Every message begins with a "=== VERIFIED GRAYLOG DATA ===" block containing EXACT counts
+fetched directly from the Graylog database. These numbers are ground truth.
 
-Respond with a single valid JSON object only — no markdown fences, no text outside the JSON.
+ACCURACY RULES — NON-NEGOTIABLE:
+1. When asked "how many logs", state TOTAL_LOGS exactly as given. Never round, estimate, or say "approximately".
+2. Use the exact CRITICAL/ERROR/WARNING/INFO counts from the verified block.
+3. If a fact is not in the provided data, say "I don't have that in the current log window" — never invent it.
+4. Always cite the TIME_WINDOW so the user knows the scope.
+5. Lead with the number or key fact. Be direct. Do not waffle.
 
-Required JSON structure:
+Respond with a single valid JSON object only — no markdown fences, no text outside JSON.
+
 {
-  "summary": "Conversational expert explanation. Name specific IPs, users, timestamps, attack patterns. Reference prior conversation context if relevant.",
-  "threatLevel": "Low" | "Medium" | "High" | "Critical",
-  "affectedSystems": ["list of hosts/systems involved"],
-  "recommendedActions": ["specific", "actionable", "steps for the team"],
-  "logEntries": [
-    {"timestamp": "ISO 8601", "source": "host", "level": "INFO|WARNING|ERROR|CRITICAL", "message": "log line"}
-  ],
-  "followUps": [
-    "3 natural follow-up questions the analyst would likely want to ask next, specific to what was found"
-  ]
-}
-
-Rules:
-- logEntries: max 10 most relevant entries supporting your analysis
-- followUps: make them specific (e.g. "Which accounts had the most failures?" not "Tell me more")
-- Always output valid JSON only — the response is parsed programmatically"""
-
-
-# Streaming variant: plain-text summary first, then separator, then JSON
-STREAM_SYSTEM_PROMPT = """You are OmniLog, an expert AI cybersecurity analyst embedded in a Graylog SIEM platform.
-Help IT and security teams understand security events in plain language and act fast.
-
-You may receive a conversation history — use it to give contextual, connected answers.
-
-RESPONSE FORMAT — follow this exactly, no deviations:
-
-First, write 2-4 sentences of plain-text analysis. Be specific: name IPs, users, ports, patterns. Reference prior conversation context if relevant.
-
-Then on a new line write exactly:
----ANALYSIS---
-
-Then on the next line write a single JSON object:
-{
-  "threatLevel": "Low" | "Medium" | "High" | "Critical",
-  "affectedSystems": ["list of hosts/systems"],
+  "summary": "Lead with the key fact or number. Then 2-4 sentences of specific analysis naming IPs, users, timestamps. Reference conversation history if relevant. No jargon.",
+  "threatLevel": "Low|Medium|High|Critical",
+  "affectedSystems": ["list of hosts/systems from the logs"],
   "recommendedActions": ["specific", "actionable", "steps"],
   "logEntries": [
     {"timestamp": "ISO 8601", "source": "host", "level": "INFO|WARNING|ERROR|CRITICAL", "message": "log line"}
   ],
   "followUps": [
-    "3 natural follow-up questions specific to what was found"
+    "3 specific follow-up questions based on what was actually found"
   ]
 }
 
-Rules:
-- logEntries: max 10 most relevant entries
-- followUps: specific questions (e.g. "Which IP triggered the most alerts?")
-- Nothing outside the format above — no preamble, no closing text"""
+logEntries: max 10 most relevant entries.
+followUps: make them specific — e.g. "Which accounts had the most failures?" not "Tell me more"."""
+
+
+STREAM_SYSTEM_PROMPT = """You are OmniLog, a precise AI security analyst embedded in a Graylog SIEM.
+
+Every message begins with a "=== VERIFIED GRAYLOG DATA ===" block containing EXACT counts
+fetched directly from the Graylog database. These numbers are ground truth.
+
+ACCURACY RULES — NON-NEGOTIABLE:
+1. When asked "how many logs", state TOTAL_LOGS exactly. Never round or estimate.
+2. Use the exact CRITICAL/ERROR/WARNING/INFO breakdown from the verified block.
+3. If a fact isn't in the provided data, say so — never invent details.
+4. Always cite the TIME_WINDOW in your answer.
+5. Lead with the answer. Be direct and specific.
+
+RESPONSE FORMAT — follow exactly:
+
+Write 2-4 sentences of direct analysis. Start with the key fact or number. Name specific IPs, users, timestamps. Reference prior conversation if relevant.
+
+Then on a new line write exactly:
+---ANALYSIS---
+
+Then a single JSON object:
+{
+  "threatLevel": "Low|Medium|High|Critical",
+  "affectedSystems": ["hosts from the logs"],
+  "recommendedActions": ["specific", "actionable", "steps"],
+  "logEntries": [
+    {"timestamp": "ISO 8601", "source": "host", "level": "INFO|WARNING|ERROR|CRITICAL", "message": "log line"}
+  ],
+  "followUps": [
+    "3 specific follow-up questions based on what was actually found"
+  ]
+}
+
+Nothing outside this format. No preamble, no closing remarks."""
 
 SEPARATOR = "---ANALYSIS---"
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ── Context builder ───────────────────────────────────────────────────────────
+
+def _build_verified_header(stats: dict, time_label: str, log_count: int) -> str:
+    """Prepend exact Graylog counts as ground truth. Claude must cite these, not estimate."""
+    by_level = stats.get("by_level", {})
+    total    = stats.get("total", log_count)
+    lines = [
+        "=== VERIFIED GRAYLOG DATA ===",
+        f"TIME_WINDOW    : {time_label}",
+        f"TOTAL_LOGS     : {total:,}",
+        f"  CRITICAL     : {by_level.get('CRITICAL', 0):,}",
+        f"  ERROR        : {by_level.get('ERROR', 0):,}",
+        f"  WARNING      : {by_level.get('WARNING', 0):,}",
+        f"  INFO         : {by_level.get('INFO', 0):,}",
+        f"SAMPLE_FETCHED : {log_count} representative entries shown below",
+        "=== END VERIFIED DATA ===",
+    ]
+    return "\n".join(lines)
+
 
 def _format_logs(logs: list[LogEntry]) -> str:
     if not logs:
-        return "No logs found in Graylog for this time window."
+        return "No log entries returned for this query."
     lines = [
         f"[{log.timestamp}] [{log.level}] {log.source}: {log.message}"
-        for log in logs[:50]
+        for log in logs[:100]
     ]
     return "\n".join(lines)
 
@@ -101,29 +126,29 @@ def _build_messages(
     query: str,
     history: list[HistoryMessage],
     logs: list[LogEntry],
+    stats: dict,
+    time_label: str,
     streaming: bool = False,
 ) -> list[dict]:
-    """Build Claude messages array including conversation history."""
     messages: list[dict] = []
 
-    # Interleave prior turns (skip incomplete or empty entries)
     for h in history:
         if h.content.strip():
             messages.append({"role": h.role, "content": h.content})
 
-    # Ensure messages alternate properly (Claude requires user/assistant alternation)
-    # If last message is from assistant, that's fine — we're about to add a user message
-    # If somehow history ends with user, add a placeholder assistant message
     if messages and messages[-1]["role"] == "user":
         messages.append({"role": "assistant", "content": "Understood. What else would you like to know?"})
 
-    suffix = "\n\nRespond with the required format only." if streaming else "\n\nRespond with the JSON structure only."
+    verified_header = _build_verified_header(stats, time_label, len(logs))
     logs_text = _format_logs(logs)
+    suffix = "\n\nRespond with the required format only." if streaming else "\n\nRespond with the JSON structure only."
+
     messages.append({
         "role": "user",
         "content": (
-            f"Graylog logs (last hour):\n{logs_text}\n\n"
-            f"Security team question: {query}"
+            f"{verified_header}\n\n"
+            f"=== LOG SAMPLE ===\n{logs_text}\n=== END SAMPLE ===\n\n"
+            f"Question: {query}"
             f"{suffix}"
         ),
     })
@@ -144,7 +169,6 @@ def _parse_response(raw: str) -> ThreatAnalysis:
 def _fallback_followups(query: str, logs: list[LogEntry], critical_ips: list[str]) -> list[str]:
     q = query.lower()
     tips: list[str] = []
-
     if critical_ips:
         tips.append(f"What other activity came from {critical_ips[0]}?")
     if "ssh" in q or "login" in q or "fail" in q:
@@ -158,60 +182,68 @@ def _fallback_followups(query: str, logs: list[LogEntry], critical_ips: list[str
         tips.append("Are these errors linked to a recent deployment?")
     else:
         tips.append("Are there related events in the last 24 hours?")
-        tips.append("What's the normal baseline for these events?")
-
+        tips.append("Show me a breakdown of events by severity level.")
     if len(tips) < 3:
-        tips.append("Show me a summary of all security events today.")
-
+        tips.append("Which hosts generated the most log volume today?")
     return tips[:3]
 
 
-def _fallback_analyze(query: str, logs: list[LogEntry]) -> ThreatAnalysis:
-    q = query.lower()
-    relevant = logs[:10]
+def _fallback_analyze(
+    query: str,
+    logs: list[LogEntry],
+    stats: dict | None = None,
+    time_label: str = "last hour",
+) -> ThreatAnalysis:
+    by_level = (stats or {}).get("by_level", {})
+    total    = (stats or {}).get("total", len(logs))
 
-    sources = list({l.source for l in relevant})
+    critical_count = by_level.get("CRITICAL", 0)
+    error_count    = by_level.get("ERROR", 0)
+    warning_count  = by_level.get("WARNING", 0)
+    info_count     = by_level.get("INFO", 0)
+
+    relevant     = logs[:10]
+    sources      = list({l.source for l in relevant})
     critical_ips = list({
         word for log in relevant
         for word in log.message.split()
         if word.count(".") == 3 and all(p.isdigit() for p in word.split("."))
     })[:5]
 
-    error_logs   = [l for l in relevant if l.level in ("ERROR", "CRITICAL")]
-    warning_logs = [l for l in relevant if l.level == "WARNING"]
+    failed_logins = [l for l in logs if "failed password" in l.message.lower() or "authentication failure" in l.message.lower()]
+    suspicious    = [l for l in logs if any(kw in l.message.lower() for kw in ("brute", "scan", "injection", "exfil", "anomaly"))]
 
-    if len(error_logs) >= 3 or any("brute" in l.message.lower() for l in relevant):
+    if critical_count >= 5 or suspicious:
         threat = "Critical"
-    elif len(error_logs) >= 1 or len(warning_logs) >= 3:
+    elif critical_count >= 1 or error_count >= 3:
         threat = "High"
-    elif len(warning_logs) >= 1:
+    elif error_count >= 1 or warning_count >= 3:
         threat = "Medium"
     else:
         threat = "Low"
 
     if not logs:
         summary = (
-            "No logs matched your query in the current time window. "
-            "The system is monitoring but no relevant events were found. "
-            "(Rule-based mode — add Anthropic API credits for full Claude AI analysis.)"
+            f"No logs found in Graylog for the {time_label} window. "
+            "Nothing matched this query. "
+            "(Rule-based mode — add Anthropic API credits for full AI analysis.)"
         )
     else:
-        top_msgs = "; ".join(l.message[:80] for l in relevant[:3])
         summary = (
-            f"Analysed {len(logs)} Graylog log entries. "
-            f"Detected {len(error_logs)} error-level and {len(warning_logs)} warning-level events. "
-            f"Top events: {top_msgs}. "
-            f"Involved systems: {', '.join(sources[:4])}. "
-            + (f"External IPs observed: {', '.join(critical_ips)}. " if critical_ips else "")
-            + "(Rule-based analysis — add Anthropic API credits to enable full Claude AI insights.)"
+            f"Graylog recorded {total:,} total logs in the {time_label} window: "
+            f"{critical_count:,} CRITICAL, {error_count:,} ERROR, {warning_count:,} WARNING, {info_count:,} INFO. "
         )
+        if failed_logins:
+            summary += f"{len(failed_logins)} failed login attempts detected. "
+        if suspicious:
+            summary += f"{len(suspicious)} suspicious events flagged. "
+        if critical_ips:
+            summary += f"Active external IPs: {', '.join(critical_ips)}. "
+        summary += "(Rule-based analysis — add Anthropic API credits for full AI insights.)"
 
-    actions = [
-        f"Review logs on: {', '.join(sources[:3])}",
-        "Check firewall rules for any suspicious source IPs",
-        "Correlate events with user activity in Active Directory",
-        "Enable full AI analysis by adding credits at console.anthropic.com",
-    ]
+    actions = [f"Review logs on: {', '.join(sources[:3])}",
+               "Check firewall rules for suspicious source IPs",
+               "Correlate with user activity in Active Directory"]
     if critical_ips:
         actions.insert(0, f"Investigate or block IPs: {', '.join(critical_ips)}")
 
@@ -228,21 +260,21 @@ def _fallback_analyze(query: str, logs: list[LogEntry]) -> ThreatAnalysis:
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def quick_analyze(query: str, logs: list[LogEntry]) -> ThreatAnalysis:
-    """Instant rule-based analysis — never calls the Claude API. Used for live alerts."""
+    """Instant rule-based analysis — used for live alerts, never calls Claude API."""
     return _fallback_analyze(query, logs)
 
 
 async def analyze(
     query: str,
     logs: list[LogEntry],
+    stats: dict | None = None,
+    time_label: str = "last hour",
     history: list[HistoryMessage] | None = None,
 ) -> ThreatAnalysis:
-    """Non-streaming analysis for the standard /chat endpoint."""
     if not settings.anthropic_api_key:
-        return _fallback_analyze(query, logs)
+        return _fallback_analyze(query, logs, stats, time_label)
 
-    messages = _build_messages(query, history or [], logs, streaming=False)
-
+    messages = _build_messages(query, history or [], logs, stats or {}, time_label, streaming=False)
     try:
         message = get_sync_client().messages.create(
             model="claude-sonnet-4-6",
@@ -251,42 +283,39 @@ async def analyze(
             messages=messages,
         )
         return _parse_response(message.content[0].text)
-
-    except (anthropic.BadRequestError, anthropic.AuthenticationError,
-            anthropic.RateLimitError) as exc:
+    except (anthropic.BadRequestError, anthropic.AuthenticationError, anthropic.RateLimitError) as exc:
         print(f"[Claude] API error ({type(exc).__name__}): {exc}")
-        return _fallback_analyze(query, logs)
-
+        return _fallback_analyze(query, logs, stats, time_label)
     except Exception as exc:
         print(f"[Claude] Unexpected error: {exc}")
-        return _fallback_analyze(query, logs)
+        return _fallback_analyze(query, logs, stats, time_label)
 
 
 async def analyze_stream(
     query: str,
     logs: list[LogEntry],
+    stats: dict | None = None,
+    time_label: str = "last hour",
     history: list[HistoryMessage] | None = None,
 ):
     """
-    Async generator for the /chat/stream SSE endpoint.
-    Yields dicts:
-      {"type": "text", "delta": "<char>"}        — summary characters as they arrive
-      {"type": "done", "analysis": {...}, "logs_queried": N}  — final parsed analysis
+    Async generator for /chat/stream SSE endpoint.
+    Yields {"type": "text", "delta": "..."} then {"type": "done", "analysis": {...}, "logs_queried": N}
     """
+    total = (stats or {}).get("total", len(logs))
+
     if not settings.anthropic_api_key:
-        result = _fallback_analyze(query, logs)
+        result = _fallback_analyze(query, logs, stats, time_label)
         for ch in result.summary:
             yield {"type": "text", "delta": ch}
             await asyncio.sleep(0.004)
-        yield {"type": "done", "analysis": result.model_dump(), "logs_queried": len(logs)}
+        yield {"type": "done", "analysis": result.model_dump(), "logs_queried": total}
         return
 
-    messages = _build_messages(query, history or [], logs, streaming=True)
+    messages = _build_messages(query, history or [], logs, stats or {}, time_label, streaming=True)
     full_text = ""
-
-    # Positions for streaming the pre-separator summary
-    sep_idx: int | None = None      # index where SEPARATOR starts in full_text
-    streamed_to = 0                  # how many pre-separator chars we've yielded
+    sep_idx: int | None = None
+    streamed_to = 0
 
     try:
         async with get_async_client().messages.stream(
@@ -299,36 +328,30 @@ async def analyze_stream(
                 full_text += chunk
 
                 if sep_idx is None:
-                    # Check if separator has appeared yet
                     found = full_text.find(SEPARATOR)
                     if found != -1:
                         sep_idx = found
-                        # Yield all summary chars up to (but not including) the separator
                         for ch in full_text[streamed_to:sep_idx]:
                             yield {"type": "text", "delta": ch}
                         streamed_to = sep_idx
                     else:
-                        # Keep a safety buffer of SEPARATOR length to avoid splitting across chunks
                         safe_end = max(streamed_to, len(full_text) - len(SEPARATOR))
                         for ch in full_text[streamed_to:safe_end]:
                             yield {"type": "text", "delta": ch}
                         streamed_to = safe_end
-                # After separator found: just buffer (don't yield JSON tokens)
 
-        # Parse the final response
         if sep_idx is not None:
             summary_text = full_text[:sep_idx].strip()
-            json_text = full_text[sep_idx + len(SEPARATOR):].strip()
+            json_text    = full_text[sep_idx + len(SEPARATOR):].strip()
             data = json.loads(json_text)
             data["summary"] = summary_text
             analysis = ThreatAnalysis(**data)
         else:
-            # Separator not found — fall back to full JSON parse
             analysis = _parse_response(full_text)
 
-        yield {"type": "done", "analysis": analysis.model_dump(), "logs_queried": len(logs)}
+        yield {"type": "done", "analysis": analysis.model_dump(), "logs_queried": total}
 
     except Exception as exc:
         print(f"[Claude Stream] Error: {exc}")
-        result = _fallback_analyze(query, logs)
-        yield {"type": "done", "analysis": result.model_dump(), "logs_queried": len(logs)}
+        result = _fallback_analyze(query, logs, stats, time_label)
+        yield {"type": "done", "analysis": result.model_dump(), "logs_queried": total}
