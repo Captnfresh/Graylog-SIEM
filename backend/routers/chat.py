@@ -22,7 +22,7 @@ async def _fetch_logs_and_stats(message: str):
         from_dt, to_dt = day_range
         time_label = f"{from_dt.strftime('%Y-%m-%d')} (full day)"
         logs, stats = await asyncio.gather(
-            graylog.search_absolute(lucene_query, from_dt, to_dt, limit=200),
+            graylog.search_absolute(lucene_query, from_dt, to_dt, limit=500),
             graylog.get_stats(lucene_query, from_dt=from_dt, to_dt=to_dt),
         )
     else:
@@ -30,7 +30,7 @@ async def _fetch_logs_and_stats(message: str):
         mins = range_secs // 60
         time_label = f"last {mins} minutes" if mins < 120 else f"last {mins // 60} hours"
         logs, stats = await asyncio.gather(
-            graylog.search(lucene_query, range_secs=range_secs, limit=200),
+            graylog.search(lucene_query, range_secs=range_secs, limit=500),
             graylog.get_stats(lucene_query, range_secs=range_secs),
         )
 

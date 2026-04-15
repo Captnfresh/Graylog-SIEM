@@ -4,15 +4,7 @@ import anthropic
 from config import settings
 from models.schemas import LogEntry, ThreatAnalysis, HistoryMessage
 
-_sync_client: anthropic.Anthropic | None = None
 _async_client: anthropic.AsyncAnthropic | None = None
-
-
-def get_sync_client() -> anthropic.Anthropic:
-    global _sync_client
-    if _sync_client is None:
-        _sync_client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-    return _sync_client
 
 
 def get_async_client() -> anthropic.AsyncAnthropic:
@@ -27,14 +19,15 @@ def get_async_client() -> anthropic.AsyncAnthropic:
 SYSTEM_PROMPT = """You are OmniLog, a precise AI security analyst embedded in a Graylog SIEM.
 
 Every message begins with a "=== VERIFIED GRAYLOG DATA ===" block containing EXACT counts
-fetched directly from the Graylog database. These numbers are ground truth.
+fetched directly from the Graylog database, followed by ALL log entries for that window.
 
 ACCURACY RULES — NON-NEGOTIABLE:
 1. When asked "how many logs", state TOTAL_LOGS exactly as given. Never round, estimate, or say "approximately".
-2. Use the exact CRITICAL/ERROR/WARNING/INFO counts from the verified block.
+2. Use the exact CRITICAL/ERROR/WARNING/INFO counts from the verified block — do not recount from the log list.
 3. If a fact is not in the provided data, say "I don't have that in the current log window" — never invent it.
 4. Always cite the TIME_WINDOW so the user knows the scope.
 5. Lead with the number or key fact. Be direct. Do not waffle.
+6. Analyse ALL log entries provided — do not stop at the first few.
 
 Respond with a single valid JSON object only — no markdown fences, no text outside JSON.
 
@@ -58,14 +51,15 @@ followUps: make them specific — e.g. "Which accounts had the most failures?" n
 STREAM_SYSTEM_PROMPT = """You are OmniLog, a precise AI security analyst embedded in a Graylog SIEM.
 
 Every message begins with a "=== VERIFIED GRAYLOG DATA ===" block containing EXACT counts
-fetched directly from the Graylog database. These numbers are ground truth.
+fetched directly from the Graylog database, followed by ALL log entries for that window.
 
 ACCURACY RULES — NON-NEGOTIABLE:
 1. When asked "how many logs", state TOTAL_LOGS exactly. Never round or estimate.
-2. Use the exact CRITICAL/ERROR/WARNING/INFO breakdown from the verified block.
+2. Use the exact CRITICAL/ERROR/WARNING/INFO breakdown from the verified block — do not recount from the log list.
 3. If a fact isn't in the provided data, say so — never invent details.
 4. Always cite the TIME_WINDOW in your answer.
 5. Lead with the answer. Be direct and specific.
+6. Analyse ALL log entries provided — do not stop at the first few.
 
 RESPONSE FORMAT — follow exactly:
 
@@ -106,7 +100,7 @@ def _build_verified_header(stats: dict, time_label: str, log_count: int) -> str:
         f"  ERROR        : {by_level.get('ERROR', 0):,}",
         f"  WARNING      : {by_level.get('WARNING', 0):,}",
         f"  INFO         : {by_level.get('INFO', 0):,}",
-        f"SAMPLE_FETCHED : {log_count} representative entries shown below",
+        f"LOGS_SHOWN     : {log_count} (all entries fetched for this window — full analysis below)",
         "=== END VERIFIED DATA ===",
     ]
     return "\n".join(lines)
@@ -117,7 +111,7 @@ def _format_logs(logs: list[LogEntry]) -> str:
         return "No log entries returned for this query."
     lines = [
         f"[{log.timestamp}] [{log.level}] {log.source}: {log.message}"
-        for log in logs[:100]
+        for log in logs
     ]
     return "\n".join(lines)
 
@@ -276,9 +270,9 @@ async def analyze(
 
     messages = _build_messages(query, history or [], logs, stats or {}, time_label, streaming=False)
     try:
-        message = get_sync_client().messages.create(
+        message = await get_async_client().messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=2048,
+            max_tokens=4096,
             system=SYSTEM_PROMPT,
             messages=messages,
         )
@@ -320,7 +314,7 @@ async def analyze_stream(
     try:
         async with get_async_client().messages.stream(
             model="claude-sonnet-4-6",
-            max_tokens=2048,
+            max_tokens=4096,
             system=STREAM_SYSTEM_PROMPT,
             messages=messages,
         ) as stream:
