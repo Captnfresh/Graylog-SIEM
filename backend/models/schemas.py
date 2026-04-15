@@ -15,10 +15,17 @@ class ThreatAnalysis(BaseModel):
     affectedSystems: list[str]
     recommendedActions: list[str]
     logEntries: list[LogEntry]
+    followUps: list[str] = []
+
+
+class HistoryMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
 
 
 class ChatRequest(BaseModel):
     message: str
+    history: list[HistoryMessage] = []
 
 
 class ChatResponse(BaseModel):

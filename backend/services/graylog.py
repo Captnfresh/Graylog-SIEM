@@ -1,5 +1,7 @@
 import asyncio
+import re
 import httpx
+from datetime import datetime
 from config import settings
 from models.schemas import LogEntry
 
@@ -68,8 +70,50 @@ def natural_to_lucene(user_message: str) -> str:
     for keywords, lucene in _QUERY_MAP:
         if any(kw in msg for kw in keywords):
             return lucene
-    # Default: return all logs
     return "*"
+
+
+# ── Natural language → time range (seconds) ──────────────────────────────────
+_TIME_PATTERNS: list[tuple[list[str], int]] = [
+    (["last 10 min", "past 10 min", "10 min"],               600),
+    (["last 15 min", "past 15 min", "15 min"],               900),
+    (["last 30 min", "past 30 min", "30 min", "half hour"],  1800),
+    (["last 2 hour", "past 2 hour", "2 hour"],               7200),
+    (["last 6 hour", "past 6 hour", "6 hour"],               21600),
+    (["last 12 hour", "past 12 hour", "12 hour"],            43200),
+    (["last 24 hour", "past 24 hour", "24 hour"],            86400),
+    (["last hour", "past hour", "one hour"],                  3600),
+    (["yesterday", "last day", "past day"],                   86400),
+    (["last week", "past week", "this week", "7 day"],        604800),
+]
+
+
+def parse_time_range(message: str) -> int:
+    """
+    Extract a time window (seconds) from natural language.
+    Examples: "last 10 minutes" → 600, "this morning" → seconds since midnight.
+    Defaults to 3600 (1 hour).
+    """
+    msg = message.lower()
+
+    # Dynamic: today / this morning / this afternoon
+    if any(kw in msg for kw in ("this morning", "this afternoon", "today")):
+        now = datetime.now()
+        midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        return max(int((now - midnight).total_seconds()), 3600)
+
+    # "last N minutes/hours/days/weeks"
+    m = re.search(r"last\s+(\d+)\s+(minute|hour|day|week)s?", msg)
+    if m:
+        n, unit = int(m.group(1)), m.group(2)
+        return n * {"minute": 60, "hour": 3600, "day": 86400, "week": 604800}[unit]
+
+    # Static keyword patterns
+    for keywords, secs in _TIME_PATTERNS:
+        if any(kw in msg for kw in keywords):
+            return secs
+
+    return 3600  # default: 1 hour
 
 
 class GraylogClient:

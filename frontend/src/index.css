@@ -120,3 +120,22 @@
     z-index: -1;
   }
 }
+
+@media print {
+  body { background: white !important; color: black !important; }
+  /* Hide everything except the report modal */
+  body > * { display: none !important; }
+  .fixed.inset-0 { display: flex !important; position: static !important; background: white !important; }
+  /* Remove backdrop blur and dark backgrounds */
+  [class*="bg-card"], [class*="bg-muted"], [class*="bg-background"] {
+    background: transparent !important;
+  }
+  /* Reset text colors for print */
+  [class*="text-muted-foreground"] { color: #555 !important; }
+  [class*="text-foreground"]       { color: #000 !important; }
+  [class*="border-border"]         { border-color: #ccc !important; }
+  /* Page breaks */
+  .print\:break-inside-avoid { page-break-inside: avoid; }
+  /* Hide the toolbar */
+  .print\:hidden { display: none !important; }
+}

@@ -3,11 +3,25 @@ import { Shield } from "lucide-react";
 import ChatMessage, { type Message } from "./ChatMessage";
 import ChatInput from "./ChatInput";
 import TypingIndicator from "./TypingIndicator";
-import { sendChatMessage } from "@/lib/api";
+import { streamChatMessage, subscribeToAlerts, type HistoryMessage } from "@/lib/api";
 
 interface ChatAreaProps {
   pendingQuery: string | null;
   onQueryConsumed: () => void;
+}
+
+/** Build conversation history from the messages array for context passing to the API. */
+function buildHistory(messages: Message[]): HistoryMessage[] {
+  return messages
+    .filter((m) => !m.isStreaming && m.content.trim())
+    .map((m) => ({
+      role: m.role,
+      // For assistant messages, prefer the canonical summary from analysis
+      content: m.role === "assistant" && m.analysis
+        ? m.analysis.summary
+        : m.content,
+    }))
+    .slice(-10) // keep last 10 turns (5 exchange pairs) to stay within token budget
 }
 
 const ChatArea = ({ pendingQuery, onQueryConsumed }: ChatAreaProps) => {
@@ -24,45 +38,109 @@ const ChatArea = ({ pendingQuery, onQueryConsumed }: ChatAreaProps) => {
   }, [messages, isLoading]);
 
   const handleSend = useCallback(async (content: string) => {
+    // Capture history from existing messages BEFORE adding the new user message
+    const history = buildHistory(messages);
+
     const userMsg: Message = {
       id: crypto.randomUUID(),
       role: "user",
       content,
       timestamp: new Date(),
     };
-    setMessages((prev) => [...prev, userMsg]);
+
+    // Placeholder for the streaming assistant reply
+    const assistantId = crypto.randomUUID();
+    const placeholder: Message = {
+      id: assistantId,
+      role: "assistant",
+      content: "",
+      timestamp: new Date(),
+      isStreaming: true,
+    };
+
+    setMessages((prev) => [...prev, userMsg, placeholder]);
     setIsLoading(true);
 
     try {
-      const data = await sendChatMessage(content);
-      const aiMsg: Message = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: data.content,
-        timestamp: new Date(),
-        analysis: data.analysis,
-      };
-      setMessages((prev) => [...prev, aiMsg]);
+      for await (const event of streamChatMessage(content, history)) {
+        if (event.type === "text" && event.delta !== undefined) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId
+                ? { ...m, content: m.content + event.delta }
+                : m
+            )
+          );
+        } else if (event.type === "done" && event.analysis) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId
+                ? {
+                    ...m,
+                    // Replace streamed text with the canonical summary so they match exactly
+                    content: event.analysis!.summary,
+                    analysis: event.analysis,
+                    isStreaming: false,
+                  }
+                : m
+            )
+          );
+        }
+      }
     } catch (err) {
-      const errMsg: Message = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: `Unable to reach the OmniLog backend. Make sure the API server is running. (${err instanceof Error ? err.message : "Unknown error"})`,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errMsg]);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId
+            ? {
+                ...m,
+                content: `Unable to reach the OmniLog backend. (${
+                  err instanceof Error ? err.message : "Unknown error"
+                })`,
+                isStreaming: false,
+              }
+            : m
+        )
+      );
     } finally {
       setIsLoading(false);
     }
+  }, [messages]);
+
+  // Subscribe to live alert stream — inject alert messages into chat unprompted
+  useEffect(() => {
+    const es = subscribeToAlerts((event) => {
+      const alertMsg: Message = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: `Risk score spiked to ${event.riskScore}% — suspicious activity detected in the last 5 minutes. Here's what triggered it:`,
+        timestamp: new Date(),
+        analysis: event.analysis,
+        isAlert: true,
+      };
+      setMessages((prev) => [...prev, alertMsg]);
+    });
+    return () => es.close();
   }, []);
 
-  // Handle external queries from sidebar
+  // Handle external queries (sidebar quick actions, follow-up chips)
   useEffect(() => {
     if (pendingQuery) {
       handleSend(pendingQuery);
       onQueryConsumed();
     }
   }, [pendingQuery, onQueryConsumed, handleSend]);
+
+  const handleReact = useCallback((messageId: string, reaction: "up" | "down") => {
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId
+          ? { ...m, reaction: m.reaction === reaction ? undefined : reaction }
+          : m
+      )
+    );
+  }, []);
+
+  const isCurrentlyStreaming = messages.some((m) => m.isStreaming);
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -76,7 +154,8 @@ const ChatArea = ({ pendingQuery, onQueryConsumed }: ChatAreaProps) => {
             <div>
               <h2 className="text-xl font-semibold text-foreground mb-1">Welcome to OmniLog</h2>
               <p className="text-sm text-muted-foreground max-w-md">
-                Your AI-powered SIEM assistant. Ask me about security events, failed logins, network anomalies, or any threats detected in your environment.
+                Your AI-powered SIEM assistant. Ask me about security events, failed logins,
+                network anomalies, or any threats detected in your environment.
               </p>
             </div>
             <div className="font-mono text-xs text-muted-foreground/50">
@@ -86,18 +165,21 @@ const ChatArea = ({ pendingQuery, onQueryConsumed }: ChatAreaProps) => {
         ) : (
           <div className="py-4">
             {messages.map((msg) => (
-              <ChatMessage key={msg.id} message={msg} />
+              <ChatMessage
+                key={msg.id}
+                message={msg}
+                onFollowUp={handleSend}
+                onReact={handleReact}
+              />
             ))}
-            {isLoading && <TypingIndicator />}
+            {/* Only show typing indicator if NOT already streaming a response */}
+            {isLoading && !isCurrentlyStreaming && <TypingIndicator />}
           </div>
         )}
       </div>
 
       {/* Input */}
-      <ChatInput
-        onSend={handleSend}
-        isLoading={isLoading}
-      />
+      <ChatInput onSend={handleSend} isLoading={isLoading} />
     </div>
   );
 };
