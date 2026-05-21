@@ -28,7 +28,7 @@ services:
     restart: unless-stopped
 
   graylog:
-    image: graylog/graylog:6.1
+    image: graylog/graylog:6.1.16
     container_name: graylog
     depends_on:
       - mongodb
@@ -40,12 +40,59 @@ services:
       - GRAYLOG_MONGODB_URI=mongodb://mongodb:27017/graylog
       - GRAYLOG_OPENSEARCH_HOSTS=http://opensearch:9200
       - GRAYLOG_ELASTICSEARCH_HOSTS=http://opensearch:9200
+      # --- Email / SMTP (required for content pack alert notifications) ---
+      - GRAYLOG_TRANSPORT_EMAIL_ENABLED=${SMTP_ENABLED:-false}
+      - GRAYLOG_TRANSPORT_EMAIL_HOSTNAME=${SMTP_HOST:-smtp.gmail.com}
+      - GRAYLOG_TRANSPORT_EMAIL_PORT=${SMTP_PORT:-587}
+      - GRAYLOG_TRANSPORT_EMAIL_USE_AUTH=${SMTP_USE_AUTH:-true}
+      - GRAYLOG_TRANSPORT_EMAIL_USE_TLS=${SMTP_USE_TLS:-true}
+      - GRAYLOG_TRANSPORT_EMAIL_USE_SSL=${SMTP_USE_SSL:-false}
+      - GRAYLOG_TRANSPORT_EMAIL_AUTH_USERNAME=${SMTP_USERNAME}
+      - GRAYLOG_TRANSPORT_EMAIL_AUTH_PASSWORD=${SMTP_PASSWORD}
+      - GRAYLOG_TRANSPORT_EMAIL_FROM_EMAIL=${SMTP_FROM_EMAIL}
+      - GRAYLOG_TRANSPORT_EMAIL_SUBJECT_PREFIX=[Graylog]
     ports:
       - "9000:9000"
       - "1514:1514"
       - "1514:1514/udp"
       - "12201:12201"
       - "12201:12201/udp"
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: omnilog-backend
+    depends_on:
+      - graylog
+    env_file:
+      - .env
+    environment:
+      - GRAYLOG_HOST=http://graylog:9000
+      - GRAYLOG_USERNAME=admin
+      - GRAYLOG_PASSWORD=${GRAYLOG_ROOT_PASSWORD}
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: omnilog-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
+  log-simulator:
+    build: ./log-simulator
+    container_name: omnilog-log-simulator
+    depends_on:
+      - graylog
+    environment:
+      - GRAYLOG_HOST=graylog
+      - GRAYLOG_PORT=12201
+      - EVENTS_PER_BURST=6
+      - BURST_INTERVAL=5
     restart: unless-stopped
 
 volumes:
